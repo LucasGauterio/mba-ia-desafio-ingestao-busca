@@ -8,25 +8,21 @@ from langchain_postgres import PGVector
 from langchain_core.documents import Document
 import logging
 
-# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# Configurações
 PDF_PATH = os.getenv("PDF_PATH", "document.pdf")
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rag")
 EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER", "openai")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Configurações de chunking
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 150
 
 def get_embeddings():
-    """Retorna o modelo de embeddings baseado na configuração"""
     if EMBEDDINGS_PROVIDER == "openai":
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
@@ -45,7 +41,6 @@ def get_embeddings():
         raise ValueError(f"Provedor de embeddings não suportado: {EMBEDDINGS_PROVIDER}")
 
 def load_pdf(pdf_path):
-    """Carrega o PDF e retorna os documentos"""
     logger.info(f"Carregando PDF: {pdf_path}")
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"Arquivo PDF não encontrado: {pdf_path}")
@@ -56,7 +51,6 @@ def load_pdf(pdf_path):
     return documents
 
 def split_documents(documents):
-    """Divide os documentos em chunks"""
     logger.info("Dividindo documentos em chunks...")
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
@@ -70,17 +64,15 @@ def split_documents(documents):
     return chunks
 
 def create_vector_store(embeddings, chunks):
-    """Cria o vector store no PostgreSQL"""
     logger.info("Criando vector store no PostgreSQL...")
     
     vector_store = PGVector(
         embeddings=embeddings,
         connection_string=DATABASE_URL,
         collection_name="pdf_documents",
-        pre_delete_collection=True  # Remove coleção existente antes de criar nova
+        pre_delete_collection=True
     )
     
-    # Adicionar chunks ao vector store
     logger.info("Adicionando chunks ao vector store...")
     vector_store.add_documents(chunks)
     
@@ -88,24 +80,18 @@ def create_vector_store(embeddings, chunks):
     return vector_store
 
 def ingest_pdf():
-    """Função principal de ingestão"""
     try:
-        # Verificar se o PDF existe
         if not os.path.exists(PDF_PATH):
             logger.error(f"Arquivo PDF não encontrado: {PDF_PATH}")
             return False
         
-        # Obter modelo de embeddings
         logger.info(f"Usando provedor de embeddings: {EMBEDDINGS_PROVIDER}")
         embeddings = get_embeddings()
         
-        # Carregar PDF
         documents = load_pdf(PDF_PATH)
         
-        # Dividir em chunks
         chunks = split_documents(documents)
         
-        # Criar vector store
         vector_store = create_vector_store(embeddings, chunks)
         
         logger.info("Ingestão concluída com sucesso!")

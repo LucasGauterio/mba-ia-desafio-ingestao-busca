@@ -8,13 +8,11 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 import logging
 
-# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# Configurações
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rag")
 EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER", "openai")
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
@@ -49,7 +47,6 @@ RESPONDA A "PERGUNTA DO USUÁRIO"
 """
 
 def get_embeddings():
-    """Retorna o modelo de embeddings baseado na configuração"""
     if EMBEDDINGS_PROVIDER == "openai":
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
@@ -68,7 +65,6 @@ def get_embeddings():
         raise ValueError(f"Provedor de embeddings não suportado: {EMBEDDINGS_PROVIDER}")
 
 def get_llm():
-    """Retorna o modelo de LLM baseado na configuração"""
     if LLM_PROVIDER == "openai":
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
@@ -89,7 +85,6 @@ def get_llm():
         raise ValueError(f"Provedor de LLM não suportado: {LLM_PROVIDER}")
 
 def get_vector_store():
-    """Retorna o vector store conectado ao PostgreSQL"""
     embeddings = get_embeddings()
     return PGVector(
         embeddings=embeddings,
@@ -98,7 +93,6 @@ def get_vector_store():
     )
 
 def search_documents(query, k=10):
-    """Busca documentos similares no vector store"""
     try:
         vector_store = get_vector_store()
         results = vector_store.similarity_search_with_score(query, k=k)
@@ -108,7 +102,6 @@ def search_documents(query, k=10):
         return []
 
 def format_context(documents):
-    """Formata os documentos encontrados como contexto"""
     if not documents:
         return "Nenhum documento relevante encontrado."
     
@@ -119,15 +112,11 @@ def format_context(documents):
     return "\n".join(context_parts)
 
 def create_rag_chain():
-    """Cria a cadeia RAG para busca e resposta"""
     try:
-        # Obter LLM
         llm = get_llm()
         
-        # Criar prompt template
         prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
         
-        # Criar chain
         chain = (
             {
                 "contexto": lambda x: format_context(search_documents(x["pergunta"])),
@@ -144,7 +133,6 @@ def create_rag_chain():
         return None
 
 def search_prompt(question=None):
-    """Função principal de busca - mantida para compatibilidade"""
     if question is None:
         return create_rag_chain()
     
@@ -160,7 +148,6 @@ def search_prompt(question=None):
         return "Erro ao processar sua pergunta. Tente novamente."
 
 if __name__ == "__main__":
-    # Teste da função de busca
     chain = create_rag_chain()
     if chain:
         print("SUCESSO: Sistema de busca inicializado com sucesso!")

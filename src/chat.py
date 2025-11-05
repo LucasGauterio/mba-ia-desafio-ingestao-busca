@@ -4,14 +4,12 @@ from dotenv import load_dotenv
 from search import create_rag_chain
 import logging
 
-# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 def print_banner():
-    """Exibe o banner do sistema"""
     print("=" * 60)
     print("SISTEMA DE BUSCA SEMÂNTICA COM LANGCHAIN")
     print("=" * 60)
@@ -20,7 +18,6 @@ def print_banner():
     print("=" * 60)
 
 def print_help():
-    """Exibe a ajuda do sistema"""
     print("\nCOMANDOS DISPONÍVEIS:")
     print("• Digite sua pergunta normalmente")
     print("• 'sair' ou 'quit' - Encerra o chat")
@@ -33,14 +30,11 @@ def print_help():
     print("-" * 60)
 
 def clear_screen():
-    """Limpa a tela do terminal"""
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def main():
-    """Função principal do chat"""
     print_banner()
     
-    # Inicializar o sistema de busca
     print("Inicializando sistema de busca...")
     chain = create_rag_chain()
     
@@ -57,13 +51,10 @@ def main():
     print("\nChat iniciado! Faça sua pergunta:")
     print("-" * 60)
     
-    # Loop principal do chat
     while True:
         try:
-            # Obter input do usuário
             user_input = input("\nPERGUNTA: ").strip()
             
-            # Verificar comandos especiais
             if user_input.lower() in ['sair', 'quit', 'exit']:
                 print("\nAté logo! Chat encerrado.")
                 break
@@ -78,11 +69,9 @@ def main():
                 print("AVISO: Por favor, digite uma pergunta.")
                 continue
             
-            # Processar pergunta
             print("Processando sua pergunta...")
             response = chain.invoke({"pergunta": user_input})
             
-            # Exibir resposta
             print(f"\nRESPOSTA: {response}")
             print("-" * 60)
             
