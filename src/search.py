@@ -13,11 +13,23 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rag")
-EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER", "openai")
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
+# Fix for Gemini event loop issues in thread pools
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except ImportError:
+    pass
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+PG_VECTOR_COLLECTION_NAME = os.getenv("PG_VECTOR_COLLECTION_NAME")+"_"+os.getenv("EMBEDDINGS_PROVIDER")
+GOOGLE_EMBEDDING_MODEL = os.getenv("GOOGLE_EMBEDDING_MODEL")
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL")
+GOOGLE_LLM_MODEL = os.getenv("GOOGLE_LLM_MODEL")
+OPENAI_LLM_MODEL = os.getenv("OPENAI_LLM_MODEL")
 
 PROMPT_TEMPLATE = """
 CONTEXTO:
@@ -51,14 +63,14 @@ def get_embeddings():
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
         return OpenAIEmbeddings(
-            model="text-embedding-3-small",
+            model=OPENAI_EMBEDDING_MODEL,
             openai_api_key=OPENAI_API_KEY
         )
     elif EMBEDDINGS_PROVIDER == "gemini":
         if not GOOGLE_API_KEY:
             raise ValueError("GOOGLE_API_KEY não encontrada nas variáveis de ambiente")
         return GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
+            model=GOOGLE_EMBEDDING_MODEL,
             google_api_key=GOOGLE_API_KEY
         )
     else:
@@ -69,17 +81,17 @@ def get_llm():
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
         return ChatOpenAI(
-            model="gpt-4o-mini",
+            model=OPENAI_LLM_MODEL,
             openai_api_key=OPENAI_API_KEY,
-            temperature=0
+            temperature=0.1
         )
     elif LLM_PROVIDER == "gemini":
         if not GOOGLE_API_KEY:
             raise ValueError("GOOGLE_API_KEY não encontrada nas variáveis de ambiente")
         return ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-exp",
+            model=GOOGLE_LLM_MODEL,
             google_api_key=GOOGLE_API_KEY,
-            temperature=0
+            temperature=0.1
         )
     else:
         raise ValueError(f"Provedor de LLM não suportado: {LLM_PROVIDER}")
@@ -88,8 +100,8 @@ def get_vector_store():
     embeddings = get_embeddings()
     return PGVector(
         embeddings=embeddings,
-        connection_string=DATABASE_URL,
-        collection_name="pdf_documents"
+        connection=DATABASE_URL,
+        collection_name=PG_VECTOR_COLLECTION_NAME
     )
 
 def search_documents(query, k=10):
@@ -106,7 +118,7 @@ def format_context(documents):
         return "Nenhum documento relevante encontrado."
     
     context_parts = []
-    for i, (doc, score) in enumerate(documents, 1):
+    for i, (doc, score) in enumerate(documents):
         context_parts.append(f"Documento {i} (relevância: {score:.3f}):\n{doc.page_content}\n")
     
     return "\n".join(context_parts)

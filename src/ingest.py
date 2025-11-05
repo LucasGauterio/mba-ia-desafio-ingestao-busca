@@ -8,33 +8,35 @@ from langchain_postgres import PGVector
 from langchain_core.documents import Document
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-PDF_PATH = os.getenv("PDF_PATH", "document.pdf")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rag")
-EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER", "openai")
+PDF_PATH = os.getenv("PDF_PATH")
+DATABASE_URL = os.getenv("DATABASE_URL")
+EMBEDDINGS_PROVIDER = os.getenv("EMBEDDINGS_PROVIDER")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
+PG_VECTOR_COLLECTION_NAME = os.getenv("PG_VECTOR_COLLECTION_NAME")+"_"+os.getenv("EMBEDDINGS_PROVIDER")
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 150
+GOOGLE_EMBEDDING_MODEL = os.getenv("GOOGLE_EMBEDDING_MODEL")
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL")
 
 def get_embeddings():
     if EMBEDDINGS_PROVIDER == "openai":
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
         return OpenAIEmbeddings(
-            model="text-embedding-3-small",
+            model=OPENAI_EMBEDDING_MODEL,
             openai_api_key=OPENAI_API_KEY
         )
     elif EMBEDDINGS_PROVIDER == "gemini":
         if not GOOGLE_API_KEY:
             raise ValueError("GOOGLE_API_KEY não encontrada nas variáveis de ambiente")
         return GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
+            model=GOOGLE_EMBEDDING_MODEL,
             google_api_key=GOOGLE_API_KEY
         )
     else:
@@ -48,10 +50,12 @@ def load_pdf(pdf_path):
     loader = PyPDFLoader(pdf_path)
     documents = loader.load()
     logger.info(f"PDF carregado com {len(documents)} páginas")
+    
     return documents
 
 def split_documents(documents):
     logger.info("Dividindo documentos em chunks...")
+    
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
@@ -61,6 +65,7 @@ def split_documents(documents):
     
     chunks = text_splitter.split_documents(documents)
     logger.info(f"Documentos divididos em {len(chunks)} chunks")
+    
     return chunks
 
 def create_vector_store(embeddings, chunks):
@@ -68,15 +73,18 @@ def create_vector_store(embeddings, chunks):
     
     vector_store = PGVector(
         embeddings=embeddings,
-        connection_string=DATABASE_URL,
-        collection_name="pdf_documents",
+        connection=DATABASE_URL,
+        collection_name=PG_VECTOR_COLLECTION_NAME,
         pre_delete_collection=True
     )
     
-    logger.info("Adicionando chunks ao vector store...")
+    logger.info(f"Indexando {len(chunks)} chunks no banco de dados...")
+    logger.info(f"Collection: {PG_VECTOR_COLLECTION_NAME}")
+    
     vector_store.add_documents(chunks)
     
     logger.info("Vector store criado com sucesso!")
+    
     return vector_store
 
 def ingest_pdf():
@@ -85,20 +93,19 @@ def ingest_pdf():
             logger.error(f"Arquivo PDF não encontrado: {PDF_PATH}")
             return False
         
-        logger.info(f"Usando provedor de embeddings: {EMBEDDINGS_PROVIDER}")
         embeddings = get_embeddings()
-        
         documents = load_pdf(PDF_PATH)
-        
         chunks = split_documents(documents)
+        create_vector_store(embeddings, chunks)
         
-        vector_store = create_vector_store(embeddings, chunks)
+        logger.info(f"Ingestão concluída: {len(documents)} páginas → {len(chunks)} chunks")
         
-        logger.info("Ingestão concluída com sucesso!")
         return True
         
     except Exception as e:
-        logger.error(f"Erro durante a ingestão: {str(e)}")
+        logger.error("=" * 60)
+        logger.error(f"ERRO durante a ingestão: {str(e)}", exc_info=True)
+        logger.error("=" * 60)
         return False
 
 if __name__ == "__main__":

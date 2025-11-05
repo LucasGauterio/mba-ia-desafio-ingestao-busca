@@ -27,7 +27,26 @@ def print_help():
     print("• Faça perguntas específicas sobre o conteúdo do PDF")
     print("• O sistema só responde com base no documento carregado")
     print("• Se não houver informação no documento, você receberá uma mensagem padrão")
+    print("=" * 60)
+    print("Perguntas dentro do contexto:")
+    print("=" * 60)
+    print("PERGUNTA: Qual o faturamento da Empresa SuperTechIABrazil?")
+    print("RESPOSTA: O faturamento foi de 10 milhões de reais.")
     print("-" * 60)
+    print("PERGUNTA: Qual o ano de fundação da Empresa SuperTechIABrazil?")
+    print("RESPOSTA: A empresa foi fundada em 2020.")
+    print("-" * 60)
+    print("PERGUNTA: Quais empresas tem faturamento acima de 10 milhões de reais?")
+    print("RESPOSTA: A empresa SuperTechIABrazil tem faturamento acima de 10 milhões de reais.")
+    print("=" * 60)
+    print("Perguntas fora do contexto:")
+    print("=" * 60)
+    print("PERGUNTA: Quantos clientes temos em 2024?")
+    print("RESPOSTA: Não tenho informações necessárias para responder sua pergunta.")
+    print("-" * 60)  
+    print("PERGUNTA: Qual é a capital da França?")
+    print("RESPOSTA: Não tenho informações necessárias para responder sua pergunta.")
+    print("-" * 60)  
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -48,9 +67,9 @@ def main():
         return
     
     print("Sistema inicializado com sucesso!")
-    print("\nChat iniciado! Faça sua pergunta:")
+      
+    print("Faça sua pergunta:")
     print("-" * 60)
-    
     while True:
         try:
             user_input = input("\nPERGUNTA: ").strip()
