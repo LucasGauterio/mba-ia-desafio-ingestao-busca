@@ -132,7 +132,7 @@ def create_rag_chain():
         chain = (
             {
                 "contexto": lambda x: format_context(search_documents(x["pergunta"])),
-                "pergunta": RunnablePassthrough()
+                "pergunta": lambda x: x["pergunta"]
             }
             | prompt
             | llm
