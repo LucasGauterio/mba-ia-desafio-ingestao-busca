@@ -1,13 +1,14 @@
 import os
 import sys
-from dotenv import load_dotenv
-from search import create_rag_chain
 import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from dotenv import load_dotenv
 
 load_dotenv()
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, log_level, logging.INFO))
+logger = logging.getLogger(__name__)
+
+from search import create_rag_chain
 
 def print_banner():
     print("=" * 60)

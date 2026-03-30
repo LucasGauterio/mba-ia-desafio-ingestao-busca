@@ -198,8 +198,8 @@ RESPOSTA: Não tenho informações necessárias para responder sua pergunta.
 
 ### Chunking
 
-- **Tamanho do chunk**: 1000 caracteres
-- **Overlap**: 150 caracteres
+- **Tamanho do chunk (`CHUNK_SIZE`)**: 1000 caracteres (padrão)
+- **Overlap (`CHUNK_OVERLAP`)**: 150 caracteres (padrão)
 - **Separadores**: `["\n\n", "\n", " ", ""]`
 
 ### Busca
@@ -272,12 +272,12 @@ docker compose up -d
 
 O sistema utiliza o módulo `logging` do Python para gerar logs detalhados:
 
-- **Nível padrão**: INFO
-- **Logs de ingestão**: Mostram progresso, número de páginas, chunks criados e erros
-- **Logs de busca**: Mostram queries executadas e resultados encontrados
-- **Logs de chat**: Mostram interações do usuário e erros durante o processamento
+- **Nível configurável**: O nível de log é gerenciado pela variável `LOG_LEVEL` no arquivo `.env` (padrão: `INFO`).
+- **Logs de ingestão**: Mostram progresso, número de páginas, chunks criados e erros.
+- **Logs de busca**: Mostram queries executadas e resultados encontrados.
+- **Logs de chat**: Mostram interações do usuário e erros durante o processamento.
 
-Para ver logs mais detalhados, você pode modificar o nível de logging nos arquivos para `logging.DEBUG`.
+Para ver logs mais detalhados (como o conteúdo exato das requisições e respostas do LLM, ou fluxos internos), basta alterar o `LOG_LEVEL=DEBUG` no seu arquivo `.env`.
 
 ## Contribuição
 
